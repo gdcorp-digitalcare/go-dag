@@ -1,11 +1,10 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // AcyclicGraph is a specialization of Graph that cannot have cycles.
@@ -14,8 +13,6 @@ type AcyclicGraph struct {
 }
 
 // WalkFunc is the callback used for walking the graph.
-// The return error could be a "bag of errors", learn more from
-// https://docs.sourcegraph.com/dev/background-information/languages/go_errors#use-of-errors-multierror
 type WalkFunc func(Vertex) error
 
 // DepthWalkFunc is a walk function that also receives the current depth of the
@@ -119,7 +116,7 @@ func (g *AcyclicGraph) Validate() error {
 	}
 
 	// Look for cycles of more than 1 component
-	var err errors.MultiError
+	var err error
 	cycles := g.Cycles()
 	if len(cycles) > 0 {
 		for _, cycle := range cycles {
@@ -128,16 +125,22 @@ func (g *AcyclicGraph) Validate() error {
 				cycleStr[j] = VertexName(vertex)
 			}
 
-			err = errors.Append(err, fmt.Errorf(
-				"Cycle: %s", strings.Join(cycleStr, ", ")))
+			if err == nil {
+				err = fmt.Errorf("Cycle: %s", strings.Join(cycleStr, ", "))
+			} else {
+				err = errors.Join(err, fmt.Errorf("Cycle: %s", strings.Join(cycleStr, ", ")))
+			}
 		}
 	}
 
 	// Look for cycles to self
 	for _, e := range g.Edges() {
 		if e.Source() == e.Target() {
-			err = errors.Append(err, fmt.Errorf(
-				"Self reference: %s", VertexName(e.Source())))
+			if err == nil {
+				err = fmt.Errorf("Self reference: %s", VertexName(e.Source()))
+			} else {
+				err = errors.Join(err, fmt.Errorf("Self reference: %s", VertexName(e.Source())))
+			}
 		}
 	}
 

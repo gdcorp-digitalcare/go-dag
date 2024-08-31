@@ -1,10 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/tf-dag/dag"
+	"github.com/gdcorp-digitalcare/go-dag/dag"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 	g = buildGraph()
 	if err := g.Walk(func(v dag.Vertex) error {
 		fmt.Printf("visiting %d\n", v)
-		return errors.Newf("error walking: %d", v)
+		return errors.New(fmt.Sprintf("error walking: %d", v))
 	}); err != nil {
 		fmt.Printf("error walking dag: %s", err.Error())
 	}
