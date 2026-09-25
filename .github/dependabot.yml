@@ -1,0 +1,29 @@
+version: 2
+
+registries:
+  artifactory-go:
+    type: goproxy-server
+    url: https://gdartifactory1.jfrog.io/artifactory/api/go/go-virt
+    username: ${{secrets.ARTIFACTORY_GO_USERNAME}}
+    password: ${{secrets.ARTIFACTORY_GO_TOKEN}}
+
+  github-private:
+    type: git
+    url: https://github.com
+    username: x-access-token
+    password: ${{secrets.GITHUB_PRIVATE_MODULE_PAT}}
+
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    registries:
+      - artifactory-go
+      - github-private
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
